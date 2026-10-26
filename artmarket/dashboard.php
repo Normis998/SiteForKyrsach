@@ -1,130 +1,102 @@
 <?php
-require_once __DIR__ . '/config/db.php';
-require_once __DIR__ . '/includes/functions.php';
-$user = require_login();
-$errors = [];
+require_once 'config/db.php';
+require_once 'includes/functions.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    csrf_check();
-    $action = $_POST['action'] ?? '';
-    try {
-        switch ($action) {
-            case 'profile':
-                $name = trim($_POST['name'] ?? '');
-                $bio  = trim($_POST['bio'] ?? '');
-                if (mb_strlen($name) < 2) throw new RuntimeException('Имя слишком короткое');
-                db()->prepare('UPDATE users SET name = ?, bio = ? WHERE id = ?')
-                    ->execute([$name, $bio, $user['id']]);
-                flash('Профиль обновлён');
-                redirect('/dashboard.php');
+if (!isLoggedIn()) {
+    redirect('login.php');
+}
 
-            case 'artwork':
-                if ($user['role'] !== 'artist') {
-                    throw new RuntimeException('Добавлять работы могут только художники');
-                }
-                $title = trim($_POST['title'] ?? '');
-                $desc  = trim($_POST['description'] ?? '');
-                $price = (float)($_POST['price'] ?? 0);
-                $cat   = trim($_POST['category'] ?? '');
-                if (mb_strlen($title) < 2) throw new RuntimeException('Укажите название работы');
-                $image = upload_image($_FILES['image'] ?? []);
-                if (!$image) throw new RuntimeException('Загрузите изображение');
-                db()->prepare('INSERT INTO artworks (user_id,title,description,price,image,category)
-                               VALUES (?,?,?,?,?,?)')
-                    ->execute([$user['id'], $title, $desc, $price, $image, $cat ?: null]);
-                flash('Работа добавлена в портфолио');
-                redirect('/dashboard.php');
+$user_id = $_SESSION['user_id'];
+$role = $_SESSION['role'];
+$message = '';
 
-            case 'delete_artwork':
-                $aid = (int)($_POST['artwork_id'] ?? 0);
-                $st = db()->prepare('SELECT image FROM artworks WHERE id = ? AND user_id = ?');
-                $st->execute([$aid, $user['id']]);
-                if ($row = $st->fetch()) {
-                    db()->prepare('DELETE FROM artworks WHERE id = ?')->execute([$aid]);
-                    @unlink(__DIR__ . '/' . $row['image']);
-                }
-                flash('Работа удалена');
-                redirect('/dashboard.php');
+// Обработка загрузки работы (только для художников)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $role === 'artist' && isset($_FILES['image'])) {
+    $title = trim($_POST['title'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    $image = $_FILES['image'];
+
+    if ($title && $image['error'] === UPLOAD_ERR_OK) {
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (in_array($image['type'], $allowedTypes)) {
+            $ext = pathinfo($image['name'], PATHINFO_EXTENSION);
+            $filename = uniqid('art_') . '.' . $ext;
+            $uploadPath = 'uploads/' . $filename;
+
+            if (move_uploaded_file($image['tmp_name'], $uploadPath)) {
+                $stmt = $pdo->prepare("INSERT INTO artworks (user_id, title, description, image_path) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$user_id, $title, $description, $filename]);
+                $message = "Работа успешно загружена!";
+            } else {
+                $message = "Ошибка при сохранении файла.";
+            }
+        } else {
+            $message = "Можно загружать только JPG, PNG или GIF.";
         }
-    } catch (Throwable $ex) {
-        $errors[] = $ex->getMessage();
+    } else {
+        $message = "Заполните название и выберите файл.";
     }
 }
 
+$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([$user_id]);
+$user = $stmt->fetch();
+
 $artworks = [];
-$stats = [];
-$field = $user['role'] === 'artist' ? 'artist_id' : 'customer_id';
-$st = db()->prepare("SELECT status, COUNT(*) c FROM orders WHERE $field = ? GROUP BY status");
-$st->execute([$user['id']]);
-foreach ($st as $row) $stats[$row['status']] = (int)$row['c'];
-
-if ($user['role'] === 'artist') {
-    $st = db()->prepare('SELECT * FROM artworks WHERE user_id = ? ORDER BY created_at DESC');
-    $st->execute([$user['id']]);
-    $artworks = $st->fetchAll();
+if ($role === 'artist') {
+    $stmt = $pdo->prepare("SELECT * FROM artworks WHERE user_id = ? ORDER BY created_at DESC");
+    $stmt->execute([$user_id]);
+    $artworks = $stmt->fetchAll();
 }
-
-$pageTitle = 'Личный кабинет';
-require __DIR__ . '/includes/header.php';
 ?>
-<h1>Личный кабинет</h1>
-<p class="muted">
-  <?= $user['role'] === 'artist' ? 'Художник' : 'Заказчик' ?> · <?= e($user['email']) ?>
-</p>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Личный кабинет - АртМаркет</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <?php include 'includes/header.php'; ?>
+    <main>
+        <h2>Личный кабинет</h2>
+        <p>Привет, <strong><?= escape($user['username']) ?></strong>! Твоя роль: <strong><?= $role === 'artist' ? 'Художник' : 'Заказчик' ?></strong></p>
+        
+        <?php if ($message): ?>
+            <p style="color: green; font-weight: bold;"><?= escape($message) ?></p>
+        <?php endif; ?>
 
-<?php foreach ($errors as $er): ?><div class="error"><?= e($er) ?></div><?php endforeach; ?>
+        <div style="display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap;">
+            <a href="index.php" class="btn">На главную</a>
+            <a href="artists.php" class="btn">Список художников</a>
+            <a href="orders.php" class="btn">Мои заказы</a>
+            <a href="profile.php?id=<?= $user_id ?>" class="btn btn-success">Мой профиль</a>
+        </div>
 
-<div class="row" style="margin:18px 0 28px">
-  <span class="badge pending">Ожидают: <?= $stats['pending'] ?? 0 ?></span>
-  <span class="badge accepted">В работе: <?= ($stats['accepted'] ?? 0) + ($stats['in_progress'] ?? 0) ?></span>
-  <span class="badge completed">Завершено: <?= $stats['completed'] ?? 0 ?></span>
-  <span class="spacer"></span>
-  <a class="btn btn-ghost" href="/orders.php">Все заказы →</a>
-</div>
+        <?php if ($role === 'artist'): ?>
+            <div class="card">
+                <h3>Добавить новую работу в портфолио</h3>
+                <form method="POST" enctype="multipart/form-data">
+                    <p><label>Название:<br><input type="text" name="title" required></label></p>
+                    <p><label>Описание:<br><textarea name="description" rows="3"></textarea></label></p>
+                    <p><label>Картинка (JPG/PNG):<br><input type="file" name="image" accept="image/*" required></label></p>
+                    <button type="submit">Загрузить</button>
+                </form>
+            </div>
 
-<h2>Профиль</h2>
-<form method="post" class="form">
-  <input type="hidden" name="csrf" value="<?= csrf() ?>">
-  <input type="hidden" name="action" value="profile">
-  <label>Имя <input name="name" value="<?= e($user['name']) ?>" required></label>
-  <label>О себе <?php if ($user['role'] === 'artist'): ?><span class="muted">(стиль, опыт, что рисуете)</span><?php endif; ?>
-    <textarea name="bio"><?= e($user['bio'] ?? '') ?></textarea>
-  </label>
-  <button class="btn">Сохранить</button>
-</form>
-
-<?php if ($user['role'] === 'artist'): ?>
-  <h2 style="margin-top:40px">Добавить работу</h2>
-  <form method="post" class="form" enctype="multipart/form-data">
-    <input type="hidden" name="csrf" value="<?= csrf() ?>">
-    <input type="hidden" name="action" value="artwork">
-    <label>Название <input name="title" required></label>
-    <label>Описание <textarea name="description"></textarea></label>
-    <label>Категория <input name="category" placeholder="Иллюстрация, портрет, концепт..."></label>
-    <label>Цена, ₽ <input type="number" name="price" min="0" step="100" value="1000"></label>
-    <label>Изображение <input type="file" name="image" accept="image/*" required></label>
-    <button class="btn">Добавить</button>
-  </form>
-
-  <h2 style="margin-top:40px">Мои работы</h2>
-  <?php if (!$artworks): ?>
-    <p class="muted">Пока нет работ.</p>
-  <?php else: ?>
-    <div class="grid">
-    <?php foreach ($artworks as $a): ?>
-      <article class="card">
-        <img src="/<?= e($a['image']) ?>" alt="">
-        <h3><?= e($a['title']) ?></h3>
-        <p class="price"><?= number_format((float)$a['price'], 0, '.', ' ') ?> ₽</p>
-        <form method="post" onsubmit="return confirm('Удалить работу?')">
-          <input type="hidden" name="csrf" value="<?= csrf() ?>">
-          <input type="hidden" name="action" value="delete_artwork">
-          <input type="hidden" name="artwork_id" value="<?= (int)$a['id'] ?>">
-          <button class="btn btn-danger btn-sm">Удалить</button>
-        </form>
-      </article>
-    <?php endforeach; ?>
-    </div>
-  <?php endif; ?>
-<?php endif; ?>
-<?php require __DIR__ . '/includes/footer.php'; ?>
+            <div class="card">
+                <h3>Мои работы</h3>
+                <div class="gallery">
+                    <?php foreach ($artworks as $art): ?>
+                        <div class="art-card">
+                            <img src="uploads/<?= escape($art['image_path']) ?>" alt="<?= escape($art['title']) ?>">
+                            <h3 style="padding: 10px 15px;"><?= escape($art['title']) ?></h3>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+    </main>
+    <?php include 'includes/footer.php'; ?>
+</body>
+</html>

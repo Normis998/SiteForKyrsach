@@ -1,40 +1,47 @@
 <?php
-require_once __DIR__ . '/config/db.php';
-require_once __DIR__ . '/includes/functions.php';
+require_once 'config/db.php';
+require_once 'includes/functions.php';
 
-$artworks = db()->query("
-    SELECT a.*, u.name AS artist_name
-    FROM artworks a
-    JOIN users u ON u.id = a.user_id
-    WHERE u.role = 'artist'
-    ORDER BY a.created_at DESC
-    LIMIT 12
-")->fetchAll();
-
-$pageTitle = 'АртМаркет — фриланс для художников';
-require __DIR__ . '/includes/header.php';
+try {
+    $stmt = $pdo->query("SELECT a.*, u.username FROM artworks a JOIN users u ON a.user_id = u.id ORDER BY a.created_at DESC LIMIT 10");
+    $artworks = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $artworks = [];
+    $error = "Ошибка базы данных: " . $e->getMessage();
+}
 ?>
-<section class="hero">
-  <h1>Закажите artwork у художника</h1>
-  <p>Площадка, где художники находят заказы, а заказчики — свой стиль.</p>
-  <a href="/artists.php" class="btn">Найти художника</a>
-  <?php if (!current_user()): ?>
-    <a href="/register.php" class="btn btn-ghost" style="margin-left:10px">Я художник</a>
-  <?php endif; ?>
-</section>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>АртМаркет - Платформа для художников</title>
+    <link rel="stylesheet" href="assets/style.css"> 
+</head>
+<body>
+    <?php include 'includes/header.php'; ?>
+    <main style="max-width: 1000px; margin: 20px auto; padding: 0 20px;">
+        <h1>Добро пожаловать на АртМаркет!</h1>
+        <p>Здесь вы можете найти художника или показать свои работы.</p>
 
-<h2>Свежие работы</h2>
-<div class="grid">
-<?php foreach ($artworks as $a): ?>
-  <article class="card">
-    <a href="/artwork.php?id=<?= (int)$a['id'] ?>">
-      <img src="/<?= e($a['image']) ?>" alt="<?= e($a['title']) ?>">
-      <h3><?= e($a['title']) ?></h3>
-    </a>
-    <p class="muted"><?= e($a['artist_name']) ?></p>
-    <p class="price"><?= number_format((float)$a['price'], 0, '.', ' ') ?> ₽</p>
-  </article>
-<?php endforeach; ?>
-<?php if (!$artworks): ?><p class="muted">Пока нет работ.</p><?php endif; ?>
-</div>
-<?php require __DIR__ . '/includes/footer.php'; ?>
+        <?php if (isset($error)): ?>
+            <p style="color: red;"><?= escape($error) ?></p>
+        <?php endif; ?>
+
+        <h2>Свежие работы</h2>
+        <div class="gallery" style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <?php if (empty($artworks)): ?>
+                <p>Пока нет загруженных работ. (База данных пуста).</p>
+            <?php else: ?>
+                <?php foreach ($artworks as $art): ?>
+                    <div class="art-card">
+                        <img src="uploads/<?= escape($art['image_path']) ?>" alt="<?= escape($art['title']) ?>" style="width: 100%;">
+                        <h3><?= escape($art['title']) ?></h3>
+                        <p>Автор: <?= escape($art['username']) ?></p>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </main>
+    <?php include 'includes/footer.php'; ?>
+</body>
+</html>

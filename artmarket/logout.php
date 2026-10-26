@@ -1,6 +1,5 @@
 <?php
-require_once __DIR__ . '/config/db.php';
-$_SESSION = [];
+require_once 'includes/functions.php';
 session_destroy();
-header('Location: /index.php');
-exit;
+redirect('index.php');
+?>

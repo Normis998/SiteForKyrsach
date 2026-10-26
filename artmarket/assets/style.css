@@ -1,89 +1,314 @@
-*,*::before,*::after{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-     background:#f6f4ef;color:#1c1917;line-height:1.55}
-a{color:#b45309;text-decoration:none}
-a:hover{text-decoration:underline}
-img{max-width:100%;display:block}
-.container{max-width:1120px;margin:0 auto;padding:28px 20px 60px}
+/* assets/style.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;
-  padding:14px 28px;background:#fff;border-bottom:1px solid #e7e2d8;
-  position:sticky;top:0;z-index:20;flex-wrap:wrap}
-.topbar nav{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.logo{font-weight:800;font-size:1.15rem;color:#1c1917}
-.user{color:#78716c;font-size:.9rem}
+/* --- ПЕРЕМЕННЫЕ ЦВЕТОВ (Светлая тема) --- */
+:root {
+    --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --text-color: #2c3e50;
+    --card-bg: #ffffff;
+    --header-bg: linear-gradient(90deg, #2b5876 0%, #4e4376 100%);
+    --header-text: #ffffff;
+    --primary-color: #3498db;
+    --primary-hover: #2980b9;
+    --input-bg: #ffffff;
+    --input-border: #ccc;
+    --chat-bg: #f9f9f9;
+    --chat-their-bg: #e0e0e0;
+    --footer-bg: #e2e8f0;
+    --footer-text: #64748b;
+    --shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
 
-.btn{display:inline-block;background:#b45309;color:#fff;padding:10px 18px;
-  border-radius:10px;border:0;cursor:pointer;font:inherit;font-weight:600}
-.btn:hover{background:#92400e;text-decoration:none}
-.btn-ghost{background:transparent;color:#1c1917;border:1px solid #ddd6ca}
-.btn-ghost:hover{background:#f1ede5}
-.btn-sm{padding:6px 12px;font-size:.9rem;border-radius:8px}
-.btn-danger{background:#b91c1c}
-.btn-danger:hover{background:#991b1b}
+/* --- ПЕРЕМЕННЫЕ ЦВЕТОВ (Темная тема) --- */
+[data-theme="dark"] {
+    --bg-gradient: linear-gradient(135deg, #1e1e24 0%, #2b2b36 100%);
+    --text-color: #e0e0e0;
+    --card-bg: #262633;
+    --header-bg: linear-gradient(90deg, #0f0c29 0%, #302b63 100%);
+    --header-text: #ffffff;
+    --primary-color: #5865F2; /* Discord Blue */
+    --primary-hover: #4752c4;
+    --input-bg: #1e1e24;
+    --input-border: #444;
+    --chat-bg: #1e1e24;
+    --chat-their-bg: #3f3f4e;
+    --footer-bg: #1a1a22;
+    --footer-text: #8892b0;
+    --shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
 
-.hero{background:linear-gradient(135deg,#fde68a,#fca5a5);border-radius:18px;
-  padding:48px 36px;margin-bottom:36px}
-.hero h1{margin:0 0 8px;font-size:2rem}
-.hero p{margin:0 0 20px;color:#422006}
+/* --- ОБЩИЕ СТИЛИ --- */
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-gradient);
+    background-attachment: fixed;
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    transition: background 0.4s ease, color 0.4s ease;
+}
 
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px}
-.card{background:#fff;border:1px solid #e7e2d8;border-radius:14px;padding:14px;
-  transition:.15s;display:flex;flex-direction:column}
-.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.06)}
-.card img{aspect-ratio:4/3;object-fit:cover;border-radius:10px;margin-bottom:10px;width:100%}
-.card h3{margin:0 0 4px;font-size:1rem}
-.card a{color:inherit}
-.muted{color:#78716c;font-size:.9rem;margin:2px 0}
-.price{font-weight:700;color:#b45309;margin-top:auto}
+/* Шапка сайта */
+header {
+    background: var(--header-bg);
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow);
+    color: var(--header-text);
+}
 
-.form{background:#fff;border:1px solid #e7e2d8;border-radius:14px;padding:22px;
-  max-width:560px;display:flex;flex-direction:column;gap:14px}
-.form label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.92rem}
-input,select,textarea{font:inherit;padding:10px 12px;border:1px solid #d6d0c4;
-  border-radius:9px;background:#fff;width:100%}
-textarea{min-height:110px;resize:vertical}
-input:focus,select:focus,textarea:focus{outline:2px solid #fcd34d;border-color:#f59e0b}
+header .logo {
+    color: var(--header-text);
+    text-decoration: none;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
 
-.flash{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;
-  padding:12px 16px;border-radius:10px;margin-bottom:18px}
-.error{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;
-  padding:10px 14px;border-radius:10px;margin-bottom:12px}
+nav {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
 
-.avatar{width:52px;height:52px;border-radius:50%;background:#fde68a;color:#92400e;
-  display:grid;place-items:center;font-weight:800;font-size:1.3rem}
-.avatar.big{width:96px;height:96px;font-size:2rem}
-.profile-head{display:flex;gap:24px;align-items:flex-start;background:#fff;
-  border:1px solid #e7e2d8;border-radius:16px;padding:24px;margin-bottom:32px}
-.rating{color:#b45309;font-weight:600}
-.stars{color:#f59e0b;letter-spacing:2px}
-.review{background:#fff;border:1px solid #e7e2d8;border-radius:12px;
-  padding:14px 18px;margin-bottom:12px}
+/* Кнопки меню */
+.nav-btn {
+    color: var(--header-text);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
 
-.chat{background:#fff;border:1px solid #e7e2d8;border-radius:14px;padding:16px;
-  max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
-.msg{max-width:75%;padding:9px 13px;border-radius:12px;background:#f1ede5}
-.msg.mine{background:#fde68a;align-self:flex-end}
-.msg small{display:block;color:#78716c;font-size:.75rem;margin-top:3px}
+.nav-btn:hover {
+    background-color: rgba(255,255,255,0.1);
+}
 
-.badge{display:inline-block;padding:3px 10px;border-radius:999px;
-  font-size:.8rem;font-weight:600;background:#f1ede5;color:#44403c}
-.badge.pending{background:#fef3c7;color:#92400e}
-.badge.accepted{background:#dbeafe;color:#1e40af}
-.badge.in_progress{background:#ede9fe;color:#5b21b6}
-.badge.completed{background:#d1fae5;color:#065f46}
-.badge.declined,.badge.cancelled{background:#fee2e2;color:#991b1b}
+.nav-btn.primary {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
+}
 
-table{width:100%;border-collapse:collapse;background:#fff;
-  border-radius:12px;overflow:hidden}
-th,td{padding:12px 14px;text-align:left;border-bottom:1px solid #eee9df;font-size:.94rem}
-th{background:#faf8f4;font-size:.82rem;text-transform:uppercase;
-   letter-spacing:.04em;color:#78716c}
+.nav-btn.primary:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+}
 
-.search{display:flex;gap:10px;margin-bottom:22px;max-width:520px}
-.search input{flex:1}
-.footer{text-align:center;color:#a8a29e;padding:32px 20px;font-size:.9rem}
-.row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
-.spacer{flex:1}
-h1,h2{letter-spacing:-.01em}
-@media(max-width:640px){.profile-head{flex-direction:column}}
+.theme-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Основной контент */
+main {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+    width: 100%;
+    box-sizing: border-box;
+    flex: 1;
+}
+
+h1, h2, h3 {
+    color: var(--text-color);
+    margin-top: 0;
+    transition: color 0.4s ease;
+}
+
+/* Карточки */
+.card {
+    background: var(--card-bg);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    margin-bottom: 25px;
+    transition: background 0.4s ease, transform 0.2s;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Формы */
+input[type="text"], input[type="email"], input[type="password"], input[type="number"], textarea, select {
+    width: 100%;
+    padding: 12px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-family: inherit;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.2);
+}
+
+/* Кнопки */
+button, .btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+button:hover, .btn:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-success { 
+    background-color: #2ecc71; 
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+.btn-success:hover { background-color: #27ae60; }
+
+.btn-danger { background-color: #e74c3c; }
+.btn-danger:hover { background-color: #c0392b; }
+
+/* Портфолио */
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+.art-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.art-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+}
+
+.art-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.art-card h3 {
+    padding: 15px;
+    margin: 0;
+    font-size: 16px;
+    text-align: center;
+}
+
+/* Чат */
+.chat-box {
+    background: var(--chat-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 12px;
+    padding: 20px;
+    height: 350px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    transition: background 0.4s ease;
+}
+
+.message {
+    padding: 12px 18px;
+    border-radius: 18px;
+    max-width: 75%;
+    word-wrap: break-word;
+    font-size: 14px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.message.my-msg {
+    background: var(--header-bg); /* Используем градиент шапки для своих сообщений */
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+
+.message.their-msg {
+    background: var(--chat-their-bg);
+    color: var(--text-color);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+
+.message .sender {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-bottom: 4px;
+    display: block;
+}
+
+/* Подвал */
+footer {
+    margin-top: auto;
+    padding: 20px;
+    background: var(--footer-bg);
+    text-align: center;
+    color: var(--footer-text);
+    transition: background 0.4s ease;
+    border-top: 1px solid var(--input-border);
+}
+
+footer p {
+    margin: 0;
+}
+/* Стили для таблиц */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--input-border);
+    color: var(--text-color);
+}
+
+th {
+    background-color: var(--chat-bg); /* Используем цвет фона чата для заголовка */
+    font-weight: 600;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+/* Красивые ссылки внутри таблиц */
+td a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+td a:hover {
+    text-decoration: underline;
+}
